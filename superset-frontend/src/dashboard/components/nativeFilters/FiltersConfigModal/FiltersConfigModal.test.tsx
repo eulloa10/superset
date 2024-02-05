@@ -379,7 +379,7 @@ test('deletes a filter', async () => {
     createNewOnOpen: false,
     onSave,
   });
-  const removeButtons = screen.getAllByRole('img', { name: 'trash' });
+  const removeButtons = screen.getAllByRole('button', { name: 'trash' });
   // remove NATIVE_FILTER-3 which isn't a dependancy of any other filter
   userEvent.click(removeButtons[2]);
   userEvent.click(screen.getByRole('button', { name: SAVE_REGEX }));
@@ -420,7 +420,8 @@ test('deletes a filter including dependencies', async () => {
     createNewOnOpen: false,
     onSave,
   });
-  const removeButtons = screen.getAllByRole('img', { name: 'trash' });
+  const removeButtons = screen.getAllByRole('button', { name: 'trash' });
+  console.log('REMOVE BUTTONS: ', removeButtons);
   // remove NATIVE_FILTER-2 which is a dependancy of NATIVE_FILTER-1
   userEvent.click(removeButtons[1]);
   userEvent.click(screen.getByRole('button', { name: SAVE_REGEX }));

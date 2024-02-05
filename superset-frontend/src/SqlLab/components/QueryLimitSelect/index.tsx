@@ -78,7 +78,7 @@ function renderQueryLimit(
           onClick={() => setQueryLimit(limit)}
         >
           {/* // eslint-disable-line no-use-before-define */}
-          <a role="button">{convertToNumWithSpaces(limit)}</a>{' '}
+          {convertToNumWithSpaces(limit)}{' '}
         </Menu.Item>
       ))}
     </Menu>

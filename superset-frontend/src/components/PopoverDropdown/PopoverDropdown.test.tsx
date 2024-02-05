@@ -45,7 +45,9 @@ test('renders with default props', async () => {
 test('renders the menu on click', async () => {
   render(<PopoverDropdown {...defaultProps} />);
   userEvent.click(screen.getByRole('button'));
-  expect(await screen.findByRole('menu')).toBeInTheDocument();
+  const btns = await screen.findAllByRole('button');
+  expect(btns).toHaveLength(2);
+  expect(btns[1]).toBeInTheDocument();
 });
 
 test('renders with custom button', async () => {

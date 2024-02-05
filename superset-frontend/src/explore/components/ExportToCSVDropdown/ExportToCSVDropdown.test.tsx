@@ -43,7 +43,7 @@ test('Dropdown button with menu renders', () => {
   expect(screen.getByText('.CSV')).toBeVisible();
 
   userEvent.click(screen.getByText('.CSV'));
-  expect(screen.getByRole('menu')).toBeInTheDocument();
+  expect(screen.getByRole('button')).toBeInTheDocument();
   expect(screen.getByText('Original')).toBeInTheDocument();
   expect(screen.getByText('Pivoted')).toBeInTheDocument();
 });

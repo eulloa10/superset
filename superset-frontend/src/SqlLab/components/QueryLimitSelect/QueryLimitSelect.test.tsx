@@ -32,9 +32,6 @@ import QueryLimitSelect, {
 const middlewares = [thunk];
 const mockStore = configureStore(middlewares);
 
-jest.mock('src/components/DeprecatedSelect', () => () => (
-  <div data-test="mock-deprecated-select" />
-));
 jest.mock('src/components/Select/Select', () => () => (
   <div data-test="mock-deprecated-select-select" />
 ));
@@ -119,10 +116,9 @@ describe('QueryLimitSelect', () => {
     const expectedLabels = [10, 100, 1000, 10000, 50000].map(i =>
       convertToNumWithSpaces(i),
     );
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
-    );
-
+    const actualLabels = getAllByRole('button')
+      .filter(elem => elem.classList.contains('ant-dropdown-menu-item'))
+      .map(elem => elem.textContent?.trim());
     expect(actualLabels).toEqual(expectedLabels);
   });
 
@@ -139,10 +135,10 @@ describe('QueryLimitSelect', () => {
     await waitFor(() => expect(getByRole('menu')).toBeInTheDocument());
 
     const expectedLabels = [5].map(i => convertToNumWithSpaces(i));
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
-    );
-
+    console.log('EXPECTED LABELS: ', expectedLabels);
+    const actualLabels = getAllByRole('button')
+      .filter(elem => elem.classList.contains('ant-dropdown-menu-item'))
+      .map(elem => elem.textContent?.trim());
     expect(actualLabels).toEqual(expectedLabels);
   });
 
@@ -161,10 +157,9 @@ describe('QueryLimitSelect', () => {
     const expectedLabels = [10, 100, 1000, 10000].map(i =>
       convertToNumWithSpaces(i),
     );
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
-    );
-
+    const actualLabels = getAllByRole('button')
+      .filter(elem => elem.classList.contains('ant-dropdown-menu-item'))
+      .map(elem => elem.textContent?.trim());
     expect(actualLabels).toEqual(expectedLabels);
   });
 
@@ -178,8 +173,9 @@ describe('QueryLimitSelect', () => {
 
     userEvent.click(dropdown);
     await waitFor(() => expect(getByRole('menu')).toBeInTheDocument());
-
-    const menu = getAllByRole('menuitem')[expectedIndex];
+    const menu = getAllByRole('button').filter(elem =>
+      elem.classList.contains('ant-dropdown-menu-item'),
+    )[expectedIndex];
     expect(store.getActions()).toEqual([]);
     fireEvent.click(menu);
     await waitFor(() =>

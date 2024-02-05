@@ -37,8 +37,7 @@ const createProps = () => ({
 
 test('renders with minimal props', () => {
   render(<FixedOrMetricControl {...createProps()} />);
-  expect(screen.getByRole('button')).toBeInTheDocument();
-  expect(screen.getByText('5')).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: '5' })[1]).toBeInTheDocument();
 });
 
 test('renders with default value', () => {
@@ -48,8 +47,7 @@ test('renders with default value', () => {
       default={{ type: 'fix', value: 10 }}
     />,
   );
-  expect(screen.getByRole('button')).toBeInTheDocument();
-  expect(screen.getByText('10')).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: '10' })[1]).toBeInTheDocument();
 });
 
 test('renders with value', () => {
@@ -60,8 +58,7 @@ test('renders with value', () => {
       value={{ type: 'fix', value: 20 }}
     />,
   );
-  expect(screen.getByRole('button')).toBeInTheDocument();
-  expect(screen.getByText('20')).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: '20' })[1]).toBeInTheDocument();
 });
 
 test('renders with metric type', () => {
@@ -78,8 +75,9 @@ test('renders with metric type', () => {
       }}
     />,
   );
-  expect(screen.getByRole('button')).toBeInTheDocument();
-  expect(screen.getByText('Metric A')).toBeInTheDocument();
+  expect(
+    screen.getAllByRole('button', { name: 'metric: Metric A' })[1],
+  ).toBeInTheDocument();
 });
 
 test('triggers onChange', () => {
