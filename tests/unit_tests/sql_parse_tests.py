@@ -17,6 +17,7 @@
 # pylint: disable=invalid-name, redefined-outer-name, too-many-lines
 
 from typing import Optional
+from unittest.mock import Mock
 
 import pytest
 import sqlparse
@@ -276,26 +277,30 @@ def test_extract_tables_illdefined() -> None:
     with pytest.raises(SupersetSecurityException) as excinfo:
         extract_tables("SELECT * FROM schemaname.")
     assert (
-        str(excinfo.value) == "Unable to parse SQL (generic): SELECT * FROM schemaname."
+        str(excinfo.value)
+        == "You may have an error in your SQL statement. Error parsing near '.' at line 1:25"
     )
 
     with pytest.raises(SupersetSecurityException) as excinfo:
         extract_tables("SELECT * FROM catalogname.schemaname.")
     assert (
         str(excinfo.value)
-        == "Unable to parse SQL (generic): SELECT * FROM catalogname.schemaname."
+        == "You may have an error in your SQL statement. Error parsing near '.' at line 1:37"
     )
 
     with pytest.raises(SupersetSecurityException) as excinfo:
         extract_tables("SELECT * FROM catalogname..")
     assert (
         str(excinfo.value)
-        == "Unable to parse SQL (generic): SELECT * FROM catalogname.."
+        == "You may have an error in your SQL statement. Error parsing near '.' at line 1:27"
     )
 
     with pytest.raises(SupersetSecurityException) as excinfo:
         extract_tables('SELECT * FROM "tbname')
-    assert str(excinfo.value) == 'Unable to parse SQL (generic): SELECT * FROM "tbname'
+    assert (
+        str(excinfo.value)
+        == "You may have an error in your SQL statement. Error tokenizing 'SELECT * FROM \"tbnam'"
+    )
 
     # odd edge case that works
     assert extract_tables("SELECT * FROM catalogname..tbname") == {
@@ -1936,6 +1941,7 @@ def test_sqlstatement() -> None:
     "macro",
     [
         "latest_partition('foo.bar')",
+        "latest_partition(' foo.bar ')",  # Non-atypical user error which works
         "latest_sub_partition('foo.bar', baz='qux')",
     ],
 )
@@ -1959,7 +1965,10 @@ def test_extract_tables_from_jinja_sql(
     expected: set[Table],
 ) -> None:
     assert (
-        extract_tables_from_jinja_sql(sql.format(engine=engine, macro=macro), engine)
+        extract_tables_from_jinja_sql(
+            sql=sql.format(engine=engine, macro=macro),
+            database=Mock(),
+        )
         == expected
     )
 

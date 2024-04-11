@@ -25,8 +25,7 @@ import re
 import urllib.parse
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, cast, Generic, TypeVar
-from unittest.mock import Mock
+from typing import Any, cast, Generic, TYPE_CHECKING, TypeVar
 
 import sqlglot
 import sqlparse
@@ -74,6 +73,9 @@ try:
     from sqloxide import parse_sql as sqloxide_parse
 except (ImportError, ModuleNotFoundError):
     sqloxide_parse = None
+
+if TYPE_CHECKING:
+    from superset.models.core import Database
 
 RESULT_OPERATIONS = {"UNION", "INTERSECT", "EXCEPT", "SELECT"}
 ON_KEYWORD = "ON"
@@ -750,11 +752,21 @@ class ParsedQuery:
             statements = parse(self.stripped(), dialect=self._dialect)
         except SqlglotError as ex:
             logger.warning("Unable to parse SQL (%s): %s", self._dialect, self.sql)
-            dialect = self._dialect or "generic"
+
+            message = (
+                "Error parsing near '{highlight}' at line {line}:{col}".format(  # pylint: disable=consider-using-f-string
+                    **ex.errors[0]
+                )
+                if isinstance(ex, ParseError)
+                else str(ex)
+            )
+
             raise SupersetSecurityException(
                 SupersetError(
                     error_type=SupersetErrorType.QUERY_SECURITY_ACCESS_ERROR,
-                    message=__(f"Unable to parse SQL ({dialect}): {self.sql}"),
+                    message=__(
+                        f"You may have an error in your SQL statement. {message}"
+                    ),
                     level=ErrorLevel.ERROR,
                 )
             ) from ex
@@ -1509,7 +1521,7 @@ def extract_table_references(
     }
 
 
-def extract_tables_from_jinja_sql(sql: str, engine: str | None = None) -> set[Table]:
+def extract_tables_from_jinja_sql(sql: str, database: Database) -> set[Table]:
     """
     Extract all table references in the Jinjafied SQL statement.
 
@@ -1522,17 +1534,17 @@ def extract_tables_from_jinja_sql(sql: str, engine: str | None = None) -> set[Ta
     SQLGlot.
 
     :param sql: The Jinjafied SQL statement
-    :param engine: The associated database engine
+    :param database: The database associated with the SQL statement
     :returns: The set of tables referenced in the SQL statement
     :raises SupersetSecurityException: If SQLGlot is unable to parse the SQL statement
+    :raises jinja2.exceptions.TemplateError: If the Jinjafied SQL could not be rendered
     """
 
     from superset.jinja_context import (  # pylint: disable=import-outside-toplevel
         get_template_processor,
     )
 
-    # Mock the required database as the processor signature is exposed publically.
-    processor = get_template_processor(database=Mock(backend=engine))
+    processor = get_template_processor(database)
     template = processor.env.parse(sql)
 
     tables = set()
@@ -1546,7 +1558,7 @@ def extract_tables_from_jinja_sql(sql: str, engine: str | None = None) -> set[Ta
             tables.add(
                 Table(
                     *[
-                        remove_quotes(part)
+                        remove_quotes(part.strip())
                         for part in node.args[0].value.split(".")[::-1]
                         if len(node.args) == 1
                     ]
@@ -1562,6 +1574,6 @@ def extract_tables_from_jinja_sql(sql: str, engine: str | None = None) -> set[Ta
         tables
         | ParsedQuery(
             sql_statement=processor.process_template(template),
-            engine=engine,
+            engine=database.db_engine_spec.engine,
         ).tables
     )
