@@ -16,7 +16,6 @@
 # under the License.
 """Unit tests for Superset"""
 
-import json
 import unittest
 from io import BytesIO
 from typing import Optional
@@ -38,10 +37,11 @@ from superset.daos.exceptions import (
     DAODeleteFailedError,
     DAOUpdateFailedError,
 )
-from superset.datasets.models import Dataset  # noqa: F401
 from superset.extensions import db, security_manager
 from superset.models.core import Database
 from superset.models.slice import Slice
+from superset.sql_parse import Table
+from superset.utils import json
 from superset.utils.core import backend, get_example_default_schema
 from superset.utils.database import get_example_database, get_main_database
 from superset.utils.dict_import_export import export_to_dict
@@ -242,6 +242,7 @@ class TestDatasetApi(SupersetTestCase):
         response = json.loads(rv.data.decode("utf-8"))
         assert response["count"] == 1
         expected_columns = [
+            "catalog",
             "changed_by",
             "changed_by_name",
             "changed_on_delta_humanized",
@@ -366,6 +367,7 @@ class TestDatasetApi(SupersetTestCase):
         expected_result = {
             "cache_timeout": None,
             "database": {
+                "allow_multi_catalog": False,
                 "backend": main_db.backend,
                 "database_name": "examples",
                 "id": 1,
@@ -697,7 +699,11 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 422
         data = json.loads(rv.data.decode("utf-8"))
         assert data == {
-            "message": {"table_name": ["Dataset energy_usage already exists"]}
+            "message": {
+                "table": [
+                    f"Dataset {Table(energy_usage_ds.table_name, schema)} already exists"
+                ]
+            }
         }
 
     @pytest.mark.usefixtures("load_energy_table_with_slice")
@@ -719,7 +725,11 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 422
         data = json.loads(rv.data.decode("utf-8"))
         assert data == {
-            "message": {"table_name": ["Dataset energy_usage already exists"]}
+            "message": {
+                "table": [
+                    f"Dataset {Table(energy_usage_ds.table_name, schema)} already exists"
+                ]
+            }
         }
 
     @pytest.mark.usefixtures("load_energy_table_with_slice")
@@ -1465,9 +1475,7 @@ class TestDatasetApi(SupersetTestCase):
         rv = self.put_assert_metric(uri, table_data, "put")
         data = json.loads(rv.data.decode("utf-8"))
         assert rv.status_code == 422
-        expected_response = {
-            "message": {"table_name": ["Dataset ab_user already exists"]}
-        }
+        expected_response = {"message": {"table": ["Dataset ab_user already exists"]}}
         assert data == expected_response
         db.session.delete(dataset)
         db.session.delete(ab_user)

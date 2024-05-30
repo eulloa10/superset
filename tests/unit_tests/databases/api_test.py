@@ -19,7 +19,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from io import BytesIO
 from typing import Any
@@ -41,6 +40,7 @@ from superset.db_engine_specs.sqlite import SqliteEngineSpec
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetSecurityException
 from superset.sql_parse import Table
+from superset.utils import json
 from tests.unit_tests.fixtures.common import (
     create_columnar_file,
     create_csv_file,
@@ -237,6 +237,7 @@ def test_database_connection(
             "driver": "gsheets",
             "engine_information": {
                 "disable_ssh_tunneling": True,
+                "supports_dynamic_catalog": False,
                 "supports_file_upload": True,
             },
             "expose_in_sqllab": True,
@@ -308,6 +309,7 @@ def test_database_connection(
             "driver": "gsheets",
             "engine_information": {
                 "disable_ssh_tunneling": True,
+                "supports_dynamic_catalog": False,
                 "supports_file_upload": True,
             },
             "expose_in_sqllab": True,
